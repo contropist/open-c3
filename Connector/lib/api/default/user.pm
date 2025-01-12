@@ -10,8 +10,9 @@ use api;
 use uuid;
 use Format;
 use Digest::MD5;
+use OPENC3::SysCtl;
 
-my ( $ssocookie, $passwordperiod );
+my ( $ssocookie, $passwordperiod, $cookieexpires, $multilogin );
 BEGIN{
     $ssocookie = `c3mc-sys-ctl sys.sso.cookie`;
     chomp $ssocookie;
@@ -19,6 +20,9 @@ BEGIN{
     $passwordperiod = `c3mc-sys-ctl sys.login.util.passwordperiod`;
     chomp $passwordperiod;
     $passwordperiod = 90 unless $passwordperiod && $passwordperiod =~ /^\d+$/;
+
+    $cookieexpires = OPENC3::SysCtl->new()->getint( 'sys.login.util.cookieexpires', 1, 30 * 24, 8 );
+    $multilogin    = OPENC3::SysCtl->new()->getint( 'sys.login.util.multilogin', 0, 1, 0 );
 };
 
 =pod
@@ -280,12 +284,24 @@ any '/default/user/login' => sub {
         my @chars = ( "A" .. "Z", "a" .. "z", 0 .. 9 );
         my $keys = join("", @chars[ map { rand @chars } ( 1 .. 64 ) ]);
 
+	my $keeptime = $cookieexpires * 3600;
+        if( $multilogin )
+        {
+            my $oldkeys = eval{ $api::mysql->query( "select sid,expire from openc3_connector_userinfo where name='$user'" ); };
+            return +{ stat => $JSON::false, info => $@ } if $@;
+            if( $oldkeys && @$oldkeys )
+            {
+                my ( $oldsid, $oldexpire ) = @{$oldkeys->[0]};
+                ( $keeptime, $keys ) = ( $oldexpire - time, $oldsid ) if $oldexpire && $oldexpire =~ /^\d+$/ && $oldexpire > time;
+            }
+        }
+
         my $uuid = Digest::MD5->new->add($pass)->hexdigest;
 
         my $mfa = eval{ $api::mysql->query( "select type from `openc3_connector_mfa` where user='$user' and status='on'" ) };
         return +{ stat => $JSON::false, info => "get mfa fail:$@" } if $@;
 
-        eval{ $api::mysql->execute(  "insert into openc3_connector_mfakey(`user`,`keys`,`pwmd5`,`time`)values('$user','$keys','$uuid','$time')" ); };
+        eval{ $api::mysql->execute(  "replace into openc3_connector_mfakey(`user`,`keys`,`pwmd5`,`time`)values('$user','$keys','$uuid','$time')" ); };
         return +{ stat => $JSON::false, info => $@ } if $@;
 
         if( $mfa && @$mfa && $mfa->[0][0] ne '' )
@@ -293,7 +309,7 @@ any '/default/user/login' => sub {
             return +{ stat => $JSON::true, mfa => 'google', mfakey => $keys };
         }
 
-        eval{ $api::mysql->execute( sprintf "update openc3_connector_userinfo set expire=%d,sid='%s' where name='%s'", time + 7 * 86400, $keys, $user ); };
+        eval{ $api::mysql->execute( sprintf "update openc3_connector_userinfo set expire=%d,sid='%s' where name='%s'", time + $keeptime, $keys, $user ); };
         return +{ stat => $JSON::false, info => $@ } if $@;
 
         my %domain;
@@ -303,7 +319,7 @@ any '/default/user/login' => sub {
             %domain = ( domain => ".$x[1].$x[0]") if @x >= 3;
         }
 
-        set_cookie( $api::cookiekey => $keys, http_only => 0, expires => time + 8 * 3600, %domain );
+        set_cookie( $api::cookiekey => $keys, http_only => 0, expires => time + $keeptime, %domain );
 
         eval{ $api::mysql->execute( "insert into openc3_connector_user_login_audit( `user`,`uuid`,`action`,`ip`,`t` ) values('$user','$uuid','login','$ip','$time')" ); };
         return +{ stat => $JSON::false, info => $@ } if $@;
@@ -379,8 +395,20 @@ any '/default/user/mfa' => sub {
         my @chars = ( "A" .. "Z", "a" .. "z", 0 .. 9 );
         my $keys = join("", @chars[ map { rand @chars } ( 1 .. 64 ) ]);
 
+	my $keeptime = $cookieexpires * 3600;
+        if( $multilogin )
+        {
+            my $oldkeys = eval{ $api::mysql->query( "select sid,expire from openc3_connector_userinfo where name='$user'" ); };
+            return +{ stat => $JSON::false, info => $@ } if $@;
+            if( $oldkeys && @$oldkeys )
+            {
+                my ( $oldsid, $oldexpire ) = @{$oldkeys->[0]};
+                ( $keeptime, $keys ) = ( $oldexpire - time, $oldsid ) if $oldexpire && $oldexpire =~ /^\d+$/ && $oldexpire > time;
+            }
+        }
+
         my $uuid = $pwmd5;
-        eval{ $api::mysql->execute( sprintf "update openc3_connector_userinfo set expire=%d,sid='%s' where name='%s'", time + 7 * 86400, $keys, $user ); };
+        eval{ $api::mysql->execute( sprintf "update openc3_connector_userinfo set expire=%d,sid='%s' where name='%s'", time + $keeptime, $keys, $user ); };
         return +{ stat => $JSON::false, info => $@ } if $@;
 
         my %domain;
@@ -390,7 +418,7 @@ any '/default/user/mfa' => sub {
             %domain = ( domain => ".$x[1].$x[0]") if @x >= 3;
         }
 
-        set_cookie( $api::cookiekey => $keys, http_only => 0, expires => time + 8 * 3600, %domain );
+        set_cookie( $api::cookiekey => $keys, http_only => 0, expires => time + $keeptime, %domain );
 
         eval{ $api::mysql->execute( "insert into openc3_connector_user_login_audit( `user`,`uuid`,`action`,`ip`,`t` ) values('$user','$uuid','login','$ip','$time')" ); };
         return +{ stat => $JSON::false, info => $@ } if $@;

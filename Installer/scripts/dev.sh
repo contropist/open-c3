@@ -1,6 +1,9 @@
 #!/bin/bash
 
-BASE_PATH=/data/open-c3
+C3BASEPATH=$( [[ "$(uname -s)" == Darwin ]] && echo "$HOME/open-c3-workspace" || echo "/data" )
+. $C3BASEPATH/open-c3/Installer/scripts/multi-os-support.sh
+
+BASE_PATH=$C3BASEPATH/open-c3
 
 GITADDR=http://github.com
 DOCKERINSTALL=https://get.docker.com
@@ -15,7 +18,7 @@ function start() {
     echo =================================================================
     echo "[INFO]get open-c3 ..."
     if [ ! -d $BASE_PATH ]; then
-        cd /data && git clone $GITADDR/open-c3/open-c3
+        cd $C3BASEPATH && git clone $GITADDR/open-c3/open-c3
     fi
 
     if [ -d "$BASE_PATH" ]; then
@@ -100,41 +103,41 @@ function start() {
 
         set -e
 
-        docker run --rm -i -v /data/open-c3/c3-front/:/code openc3/gulp bower install --allow-root
-        docker run --rm -i -v /data/open-c3/c3-front/:/code openc3/gulp gulp build
+        docker run --rm -i -v $C3BASEPATH/open-c3/c3-front/:/code openc3/gulp bower install --allow-root
+        docker run --rm -i -v $C3BASEPATH/open-c3/c3-front/:/code openc3/gulp gulp build
         
         frontendstyleisjuyun=$(grep '^frontendstyle: juyun' $BASE_PATH/Connector/config.inix | wc -l)
         if [ "X$frontendstyleisjuyun" == "X1" ];then
-            sed -i 's/openc3_style_ctrl=\\"[a-zA-Z0-9]*\\"/openc3_style_ctrl=\\"juyun\\"/g' $BASE_PATH/c3-front/dist/scripts/*
-            sed -i 's/#f63/#3b3677/g' $BASE_PATH/c3-front/dist/scripts/*
-            sed -i 's/#f63/#3b3677/g' $BASE_PATH/c3-front/dist/styles/*
-            sed -i 's/#e52/#293fbb/g' $BASE_PATH/c3-front/dist/styles/*
+            c3sed 's/openc3_style_ctrl=\\"[a-zA-Z0-9]*\\"/openc3_style_ctrl=\\"juyun\\"/g' $BASE_PATH/c3-front/dist/scripts/*
+            c3sed 's/#f63/#3b3677/g' $BASE_PATH/c3-front/dist/scripts/*
+            c3sed 's/#f63/#3b3677/g' $BASE_PATH/c3-front/dist/styles/*
+            c3sed 's/#e52/#293fbb/g' $BASE_PATH/c3-front/dist/styles/*
         else
-            sed -i 's/openc3_style_ctrl=\\"[a-zA-Z0-9]*\\"/openc3_style_ctrl=\\"openc3\\"/g' $BASE_PATH/c3-front/dist/scripts/*
-            sed -i 's/#3b3677/#f63/g' $BASE_PATH/c3-front/dist/scripts/*
-            sed -i 's/#3b3677/#f63/g' $BASE_PATH/c3-front/dist/styles/*
-            sed -i 's/#293fbb/#e52/g' $BASE_PATH/c3-front/dist/styles/*
+            c3sed 's/openc3_style_ctrl=\\"[a-zA-Z0-9]*\\"/openc3_style_ctrl=\\"openc3\\"/g' $BASE_PATH/c3-front/dist/scripts/*
+            c3sed 's/#3b3677/#f63/g' $BASE_PATH/c3-front/dist/scripts/*
+            c3sed 's/#3b3677/#f63/g' $BASE_PATH/c3-front/dist/styles/*
+            c3sed 's/#293fbb/#e52/g' $BASE_PATH/c3-front/dist/styles/*
         fi
 
         openc3_job_system_only=$(grep "^openc3_job_system_only: '1'" $BASE_PATH/Connector/config.inix | wc -l)
         if [ "X$openc3_job_system_only" == "X1" ];then
-            sed -i 's/openc3_job_system_only=0/openc3_job_system_only=1/g' $BASE_PATH/c3-front/dist/scripts/*
+            c3sed 's/openc3_job_system_only=0/openc3_job_system_only=1/g' $BASE_PATH/c3-front/dist/scripts/*
         else
-            sed -i 's/openc3_job_system_only=1/openc3_job_system_only=0/g' $BASE_PATH/c3-front/dist/scripts/*
+            c3sed 's/openc3_job_system_only=1/openc3_job_system_only=0/g' $BASE_PATH/c3-front/dist/scripts/*
         fi
 
         openc3_default_lang_en=$(grep "^openc3_default_lang: en" $BASE_PATH/Connector/config.inix | wc -l)
         if [ "X$openc3_default_lang_en" == "X1" ];then
-            sed -i 's/openc3DefaultLang="zh_CN"/openc3DefaultLang="en"/g' $BASE_PATH/c3-front/dist/scripts/*
+            c3sed 's/openc3DefaultLang="zh_CN"/openc3DefaultLang="en"/g' $BASE_PATH/c3-front/dist/scripts/*
         else
-            sed -i 's/openc3DefaultLang="en"/openc3DefaultLang="zh_CN"/g' $BASE_PATH/c3-front/dist/scripts/*
+            c3sed 's/openc3DefaultLang="en"/openc3DefaultLang="zh_CN"/g' $BASE_PATH/c3-front/dist/scripts/*
         fi
 
         openc3_monitor_monagent9100=$(grep "^monagent9100: '1'" $BASE_PATH/Connector/config.inix | wc -l)
         if [ "X$openc3_monitor_monagent9100" == "X1" ];then
-            sed -i 's/openc3_monitor_monagent9100=0/openc3_monitor_monagent9100=1/g' $BASE_PATH/c3-front/dist/scripts/*
+            c3sed 's/openc3_monitor_monagent9100=0/openc3_monitor_monagent9100=1/g' $BASE_PATH/c3-front/dist/scripts/*
         else
-            sed -i 's/openc3_monitor_monagent9100=1/openc3_monitor_monagent9100=0/g' $BASE_PATH/c3-front/dist/scripts/*
+            c3sed 's/openc3_monitor_monagent9100=1/openc3_monitor_monagent9100=0/g' $BASE_PATH/c3-front/dist/scripts/*
         fi
 
         rsync -av $BASE_PATH/c3-front/src/assets/ $BASE_PATH/c3-front/dist/assets/
@@ -163,8 +166,8 @@ function start() {
 #            rm -rf $BASE_PATH/c3-front/dist/book.new
 #            rm -rf $BASE_PATH/c3-front/dist/book.old
 #
-#            if [ -d /data/open-c3-book ]; then
-#                cp -r /data/open-c3-book $BASE_PATH/c3-front/dist/book.new
+#            if [ -d $C3BASEPATH/open-c3-book ]; then
+#                cp -r $C3BASEPATH/open-c3-book $BASE_PATH/c3-front/dist/book.new
 #            else
 #                cd $BASE_PATH/c3-front/dist && git clone $GITADDR/open-c3/open-c3.github.io book.new || exit 1
 #            fi
@@ -174,7 +177,7 @@ function start() {
 #        fi
         
         rm -rf $BASE_PATH/c3-front/dist/book.new
-        cp -r /data/open-c3/Connector/pkg/book $BASE_PATH/c3-front/dist/book.new
+        cp -r $C3BASEPATH/open-c3/Connector/pkg/book $BASE_PATH/c3-front/dist/book.new
         rm -rf $BASE_PATH/c3-front/dist/book
         mv $BASE_PATH/c3-front/dist/book.new $BASE_PATH/c3-front/dist/book
 
@@ -189,7 +192,7 @@ function start() {
     echo =================================================================
     echo "[INFO]start web ..."
 
-    docker run -itd -v /data/open-c3/c3-front/:/code  -p 3000:3000 --name open-c3-web-dev --add-host=open-c3.org:$IP openc3/gulp gulp serve
+    docker run -itd -v $C3BASEPATH/open-c3/c3-front/:/code  -p 3000:3000 --name open-c3-web-dev --add-host=open-c3.org:$IP openc3/gulp gulp serve
     if [ $? = 0 ]; then
         echo "[SUCC]start web success."
     else

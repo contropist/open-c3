@@ -56,6 +56,9 @@ class Huawei:
         # 处理都柏林地区的特殊情况
         if region_id == "eu-west-101":
             return f"https://{service}.{region_id}.myhuaweicloud.eu"
+        # 处理金融专区
+        elif region_id == "cn-north-219": 
+           return f"https://{service}.{region_id}.jrzq.huaweicloud.com"
         
         return f"https://{service}.{region_id}.myhuaweicloud.com"
 
@@ -208,7 +211,8 @@ class Huawei:
         global_resources = ["obs"]
         
         if self.resource_type in global_resources:
-            regions = [list(self.regions.keys())[0]] if self.regions.keys() else [] 
+            sorted_regions = sorted(self.regions.keys(), key=lambda x: ("ap-southeast-1" not in x, x))
+            regions = [sorted_regions[0]] if sorted_regions else []
         elif self.resource_type == "ecs":
             regions = self.get_ecs_availability_zones()
         elif self.resource_type == "elb":

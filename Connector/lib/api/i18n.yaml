@@ -1638,3 +1638,35 @@ Tag编辑: 'Tag edit'
 模糊搜索: fuzzy search
 二级模糊搜索: Second level fuzzy search
 条数: Rows
+测试环境发布对象: Test Env Target
+线上环境发布对象: Online Env Target
+扩容: 'Scaling up' 
+缩容: 'Scaling down' 
+控制台: Console
+知晓: 'Noted'
+批量知晓: 'Batch Noted'
+一级值班人: Oncall level1
+二级值班人: Oncall level2
+三级值班人: Oncall level3
+登陆有效期限: 'Login Period'
+单位(小时): 'Unit (hour)'
+是否允许多浏览器登陆: Multi Login Allow
+通过手写IP选择服务器: 'Select Server Node via Handwritten IP'
+运营: Operation
+GooglePlay评论管理: 'Google Play Comment Manage'
+包全名: App Package Name
+包名: Package Name
+设备名称: Device Name
+评论时间: Comment Time
+同步数据: Sync Time
+赞: Thumbs Up
+踩: Thumbs Down
+APP版本号: App Version Code
+APP版本名: App Version Name
+安卓系统: Android Os Version
+星: Star Rating
+作者: Author Name
+评论: Comment
+回复: Reply
+回调: Callback
+GooglePlay回复评论: GooglePlay Comment Reply

@@ -46,5 +46,14 @@ TZ=Asia/Shanghai
 */5 * * * * root flock -n /tmp/resources-fee-change-notify.lock /data/Software/mydan/Connector/pp/device/crontab/resources-fee-change-notify/notifyd  > /tmp/resources-fee-change-notify.log 2>&1
 
 * * * * * root flock -n /tmp/c3mc-mon-exmesg-cron.lock  /usr/bin/c3mc-mon-exmesg-cron   > /tmp/c3mc-mon-exmesg-cron.log      2>&1
+* * * * * root flock -n /tmp/c3mc-mon-exmesg-maker-cron.lock  /usr/bin/c3mc-mon-exmesg-maker-cron   > /tmp/c3mc-mon-exmesg-maker-cron.log      2>&1
 
 1 */2 * * * root flock -n /tmp/service-analysis-make.lock /data/Software/mydan/Connector/pp/service-analysis/make.sh > /tmp/service-analysis-make.log 2>&1
+15 */2 * * * root flock -n /tmp/service-analysis-nginx-make.lock /data/Software/mydan/Connector/pp/service-analysis/nginx/sync > /tmp/service-analysis-nginx-make.log 2>&1
+
+*/10 * * * * root flock -n /tmp/http-monitor.lock /data/Software/mydan/Connector/pp/mmon/http-monitor/run > /tmp/http-monitor.log 2>&1
+
+*/5 * * * * root flock -n /tmp/find-v3-data-make.lock /data/Software/mydan/Connector/pp/device/find-v3-data-make > /tmp/find-v3-data-make.log 2>&1
+
+* * * * * root flock -n /tmp/monitor-wellnoted.lock /data/Software/mydan/Connector/pp/mmon/wellnoted/run >> /data/open-c3-data/monitor-wellnoted/run.log 2>&1
+* * * * * root flock -n /tmp/c3status.lock /data/Software/mydan/Connector/pp/mmon/c3status/run.sh >> /tmp/c3status.log 2>&1
